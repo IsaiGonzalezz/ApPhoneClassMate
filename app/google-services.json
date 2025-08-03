@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "188946019592",
+    "project_id": "classmate-2df51",
+    "storage_bucket": "classmate-2df51.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:188946019592:android:98c28fa5a268229a7ce8bd",
+        "android_client_info": {
+          "package_name": "com.example.classmate"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsZTibfMjdmM4ZOs2P-DdS_bBvivmGfdY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
