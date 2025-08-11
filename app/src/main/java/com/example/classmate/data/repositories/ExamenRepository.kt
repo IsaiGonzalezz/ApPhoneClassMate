@@ -1,43 +1,48 @@
 package com.example.classmate.data.repositories
+import com.example.classmate.ClassmateDao
 import com.example.classmate.data.models.Examen
 import com.example.classmate.data.models.Nota
 import com.example.classmate.data.models.Task
 import com.example.classmate.parseCustomDate
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.sql.Date
 import javax.inject.Inject
 
-class ExamenRepository @Inject constructor () {
+class ExamenRepository @Inject constructor (
+    private val classmateDao: ClassmateDao
+) {
     private val db = FirebaseFirestore.getInstance()
-    private val tasksCollection = db.collection("examenes")
+    private suspend fun getExamenCollection(): CollectionReference {
+        // Obtiene el id_Fr actual de la base de datos local
+        val systemId = withContext(Dispatchers.IO) {
+            classmateDao.getAll().firstOrNull()?.id_Fr
+                ?: throw IllegalStateException("No hay sistema activo")
+        }
+
+        return db.collection("systems").document(systemId).collection("examenes")
+    }
 
     // Actualizar Nota
     suspend fun updateExamen(examen: Examen) {
-        tasksCollection.document(examen.id)
+        getExamenCollection().document(examen.id)
             .set(examen)
             .await()
     }
 
     // Eliminar tarea
     suspend fun deleteExamen(examenId: String) {
-        tasksCollection.document(examenId)
+        getExamenCollection().document(examenId)
             .delete()
             .await()
     }
 
-    // Obtener todas las tareas
-    suspend fun getAllExamen(): List<Examen> {
-        return tasksCollection.get()
-            .await()
-            .map { document ->
-                document.toObject(Examen::class.java).copy(id = document.id)
-            }
-    }
-
 
     suspend fun getAllExamenesSortedByDueDate(): List<Examen> {
-        return tasksCollection.get()
+        return getExamenCollection().get()
             .await()
             .map { document ->
                 document.toObject(Examen::class.java).copy(id = document.id)

@@ -22,6 +22,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -46,11 +47,19 @@ sealed class Screen(val route: String, val label: String, val icon: androidx.com
 }
 
 @Composable
+fun rememberHorarioRepository(): HorarioRepository {
+    val context = LocalContext.current
+    val app = remember { context.applicationContext as ClassmateApp }
+    return remember { HorarioRepository(app.room.classmateDao()) }
+}
+
+
+@Composable
 fun AppNavigation(context: Context = LocalContext.current) {
 
     val navController = rememberNavController()
     val bottomItems = listOf(Screen.Main, Screen.Horario)
-    val horarioRepository = HorarioRepository() // o usar Hilt si estás inyectando
+    val horarioRepository = rememberHorarioRepository()
 
     Scaffold(
         bottomBar = {

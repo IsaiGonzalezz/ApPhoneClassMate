@@ -39,15 +39,46 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.platform.LocalContext
+import com.example.classmate.data.repositories.HorarioRepository
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
+fun rememberNotasRepository(): NotasRepository {
+    val context = LocalContext.current
+    val app = remember { context.applicationContext as ClassmateApp }
+    return remember { NotasRepository(app.room.classmateDao()) }
+}
+
+@Composable
+fun rememberExamenesRepository(): ExamenRepository {
+    val context = LocalContext.current
+    val app = remember { context.applicationContext as ClassmateApp }
+    return remember { ExamenRepository(app.room.classmateDao()) }
+}
+
+@Composable
+fun rememberTareasRepository(): TaskRepository {
+    val context = LocalContext.current
+    val app = remember { context.applicationContext as ClassmateApp }
+    return remember { TaskRepository(app.room.classmateDao()) }
+}
+
+@Composable
+fun rememberHorariosRepository(): HorarioRepository {
+    val context = LocalContext.current
+    val app = remember { context.applicationContext as ClassmateApp }
+    return remember { HorarioRepository(app.room.classmateDao()) }
+}
+
+
+@Composable
 fun MainScreen(
-    taskRepository: TaskRepository = remember { TaskRepository() },
-    noteRepository: NotasRepository = remember { NotasRepository() },
-    examenRepository : ExamenRepository = remember { ExamenRepository() },
+    taskRepository: TaskRepository = rememberTareasRepository(),
+    noteRepository: NotasRepository = rememberNotasRepository(),
+    examenRepository : ExamenRepository = rememberExamenesRepository(),
     navController : NavController
 ) {
     val currentTime = remember { mutableStateOf(getFormattedTime()) }
@@ -235,7 +266,7 @@ fun ExamenDetailDialog(
     onDismiss: () -> Unit,
     onExamenUpdated: (Examen) -> Unit,
     onExamenDeleted: (String) -> Unit,
-    examenRepository: ExamenRepository = remember { ExamenRepository() }
+    examenRepository: ExamenRepository = rememberExamenesRepository()
 ) {
     val coroutineScope = rememberCoroutineScope()
     var editableExamen by remember { mutableStateOf(examen) }
@@ -377,7 +408,7 @@ fun NoteDetailDialog(
     onDismiss: () -> Unit,
     onNoteUpdated: (Nota) -> Unit,
     onNoteDeleted: (String) -> Unit,
-    noteRepository: NotasRepository = remember { NotasRepository() }
+    noteRepository: NotasRepository = rememberNotasRepository()
 ) {
     val coroutineScope = rememberCoroutineScope()
     var editableNote by remember { mutableStateOf(note) }
@@ -518,7 +549,7 @@ fun TaskDetailDialog(
     onDismiss: () -> Unit,
     onTaskUpdated: (Task) -> Unit,
     onTaskDeleted: (String) -> Unit,
-    taskRepository: TaskRepository = remember { TaskRepository() }
+    taskRepository: TaskRepository = rememberTareasRepository()
 ) {
     val coroutineScope = rememberCoroutineScope()
     var editableTask by remember { mutableStateOf(task) }

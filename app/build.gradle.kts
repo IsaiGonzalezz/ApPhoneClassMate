@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -96,4 +97,12 @@ dependencies {
 
     implementation (libs.play.services.wearable)
     implementation (libs.gson)
+
+
+    implementation ("androidx.room:room-ktx:2.7.2")
+    kapt ("androidx.room:room-compiler:2.7.2")
+
+
+    //conexion a smartwatch
+    implementation ("com.google.android.gms:play-services-wearable:18.1.0")
 }

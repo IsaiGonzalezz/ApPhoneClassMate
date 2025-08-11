@@ -13,8 +13,7 @@ import android.os.Build
 import com.example.classmate.data.repositories.TaskRepository
 
 
-fun mostrarNotificacionesDeHoy(context: Context) {
-    val taskRepository = TaskRepository()
+fun mostrarNotificacionesDeHoy(context: Context, taskRepository: TaskRepository) {
 
     CoroutineScope(Dispatchers.IO).launch {
         val tareas = withContext(Dispatchers.IO) {

@@ -1,10 +1,14 @@
 package com.example.classmate.data.repositories
 
 
+import com.example.classmate.ClassmateDao
 import com.example.classmate.data.models.Task
 import com.example.classmate.parseCustomDate
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.sql.Date
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -12,35 +16,37 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
 
-class TaskRepository @Inject constructor() {
+class TaskRepository @Inject constructor(
+    private val classmateDao: ClassmateDao
+) {
     private val db = FirebaseFirestore.getInstance()
-    private val tasksCollection = db.collection("tasks")
+    private suspend fun getTaskCollection(): CollectionReference {
+        // Obtiene el id_Fr actual de la base de datos local
+        val systemId = withContext(Dispatchers.IO) {
+            classmateDao.getAll().firstOrNull()?.id_Fr
+                ?: throw IllegalStateException("No hay sistema activo")
+        }
 
-    // Crear tarea (ya lo tienes funcionando)
-    suspend fun createTask(task: Task): String {
-        val documentRef = tasksCollection.add(task).await()
-        val taskId = documentRef.id
-        documentRef.update("id", taskId).await()
-        return taskId
+        return db.collection("systems").document(systemId).collection("tasks")
     }
 
     // Actualizar tarea
     suspend fun updateTask(task: Task) {
-        tasksCollection.document(task.id)
+        getTaskCollection().document(task.id)
             .set(task)
             .await()
     }
 
     // Eliminar tarea
     suspend fun deleteTask(taskId: String) {
-        tasksCollection.document(taskId)
+        getTaskCollection().document(taskId)
             .delete()
             .await()
     }
 
     // Obtener todas las tareas
     suspend fun getAllTasks(): List<Task> {
-        return tasksCollection.get()
+        return getTaskCollection().get()
             .await()
             .map { document ->
                 document.toObject(Task::class.java).copy(id = document.id)
@@ -49,7 +55,7 @@ class TaskRepository @Inject constructor() {
 
     // Obtener tarea por ID
     suspend fun getTaskById(taskId: String): Task? {
-        return tasksCollection.document(taskId)
+        return getTaskCollection().document(taskId)
             .get()
             .await()
             .toObject(Task::class.java)
@@ -57,7 +63,7 @@ class TaskRepository @Inject constructor() {
     }
 
     suspend fun getAllTasksSortedByDueDate(): List<Task> {
-        return tasksCollection.get()
+        return getTaskCollection().get()
             .await()
             .map { document ->
                 document.toObject(Task::class.java).copy(id = document.id)
@@ -72,8 +78,7 @@ class TaskRepository @Inject constructor() {
             .format(java.util.Date())
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() }
 
-        val snapshot = FirebaseFirestore.getInstance()
-            .collection("tasks")
+        val snapshot = getTaskCollection()  // Usa la misma colección estructurada
             .whereEqualTo("notification", true)
             .whereEqualTo("reminder", hoy)
             .get()

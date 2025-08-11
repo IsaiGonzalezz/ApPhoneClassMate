@@ -53,11 +53,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.pointer.pointerInput
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestoreException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun HorarioScreen(navController: NavController, onClaseAdded: () -> Unit = {}) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    val app by lazy { context.applicationContext as ClassmateApp }
+    var systems by remember { mutableStateOf(listOf<ClassMate>()) }
+    var idFr by remember { mutableStateOf("") }
+
 
     // Estados
     var materia by remember { mutableStateOf("") }
@@ -76,6 +83,14 @@ fun HorarioScreen(navController: NavController, onClaseAdded: () -> Unit = {}) {
 
     var horaFin by remember { mutableStateOf("07") }
     var minutoFin by remember { mutableStateOf("30") }
+
+
+    LaunchedEffect(Unit) {
+        systems = withContext(Dispatchers.IO) {
+            app.room.classmateDao().getAll()
+        }
+        idFr = systems.firstOrNull()?.id_Fr ?: ""
+    }
 
     Column(
         modifier = Modifier
@@ -168,9 +183,15 @@ fun HorarioScreen(navController: NavController, onClaseAdded: () -> Unit = {}) {
                     "hora_fin" to "$horaFin:$minutoFin"
                 )
 
+                // 1. Primero obtén el id_Fr (como ya lo tienes en tus sistemas)
+                val idFr = systems.firstOrNull()?.id_Fr ?: ""
+
+                // 2. Estructura la referencia con el id_Fr como documento padre
                 val docRef = FirebaseFirestore.getInstance()
-                    .collection("horarios")
-                    .document(diaSeleccionado)
+                    .collection("systems")       // Colección raíz
+                    .document(idFr)             // Documento del sistema específico
+                    .collection("horarios")     // Subcolección de horarios
+                    .document(diaSeleccionado)  // Documento del día específico
 
                 scope.launch {
                     try {

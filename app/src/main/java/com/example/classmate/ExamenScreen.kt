@@ -36,7 +36,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -52,11 +54,21 @@ fun AddExamenScreen(navController: NavController ,onExamenAdded: () -> Unit = {}
     var temas by remember { mutableStateOf("") }
     var notification by remember { mutableStateOf(false) }
     var reminder by remember { mutableStateOf("Selecciona una fecha") }
+    val app by lazy { context.applicationContext as ClassmateApp }
+    var systems by remember { mutableStateOf(listOf<ClassMate>()) }
+    var idFr by remember { mutableStateOf("") }
 
     // Estados de UI
     var isLoading by remember { mutableStateOf(false) }
     var showSuccess by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        systems = withContext(Dispatchers.IO) {
+            app.room.classmateDao().getAll()
+        }
+        idFr = systems.firstOrNull()?.id_Fr ?: ""
+    }
 
     Column(
         modifier = Modifier
@@ -113,13 +125,34 @@ fun AddExamenScreen(navController: NavController ,onExamenAdded: () -> Unit = {}
 
                 scope.launch {
                     try {
-                        val documentRef = FirebaseFirestore.getInstance()
-                            .collection("examenes")
-                            .add(taskData)
-                            .await()
+                        // 1. Verificar que tenemos un idFr válido
+                        if (idFr.isBlank()) {
+                            errorMessage = "No se encontró ID de sistema ${idFr}"
+                            return@launch
+                        }
 
-                        val taskId = documentRef.id
-                        documentRef.update("id", taskId).await()
+                        // 2. Crear referencia directa al documento padre
+                        val parentDocRef = FirebaseFirestore.getInstance()
+                            .collection("systems")  // 👈 Colección raíz
+                            .document(idFr)         // 👈 Documento con tu ID
+
+                        // 3. Crear la nota en la subcolección
+                        val examenRef = parentDocRef
+                            .collection("examenes")    // 👈 Subcolección
+                            .document()             // 👈 Documento auto-generado
+
+                        // 4. Crear el objeto con todos los datos
+                        val examenData = hashMapOf(
+                            "id" to examenRef.id,     // 👈 Usamos el ID auto-generado
+                            "materia" to materia,
+                            "dueDate" to dueDate,
+                            "temas" to temas,
+                            "reminder" to reminder
+                        )
+
+                        // 5. Guardar todo en una sola operación
+                        examenRef.set(examenData).await()
+
 
                         // Limpiar formulario
                         materia = ""
